@@ -1,0 +1,44 @@
+version: '3.9'
+
+services:
+  # MySQL Database
+  mysql:
+    image: mysql:8.0
+    container_name: auditor-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-rootpassword}
+      MYSQL_DATABASE: ${DB_NAME:-auditor_db}
+      MYSQL_USER: ${DB_USER:-auditor_user}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-auditor_password}
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./backend/src/db/scripts:/docker-entrypoint-initdb.d
+    networks:
+      - auditor-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 5s
+      retries: 5
+
+  # Optional: Redis for caching (commented out for MVP)
+  # redis:
+  #   image: redis:7-alpine
+  #   container_name: auditor-redis
+  #   restart: unless-stopped
+  #   ports:
+  #     - "6379:6379"
+  #   volumes:
+  #     - redis_data:/data
+  #   networks:
+  #     - auditor-network
+
+networks:
+  auditor-network:
+    driver: bridge
+
+volumes:
+  mysql_data:
+  # redis_data:

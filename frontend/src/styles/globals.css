@@ -1,0 +1,61 @@
+@import "tailwindcss";
+
+@layer base {
+  * {
+    @apply border-slate-800;
+  }
+
+  body {
+    @apply bg-slate-950 text-slate-50;
+  }
+
+  h1 {
+    @apply text-2xl font-bold text-slate-50;
+  }
+
+  h2 {
+    @apply text-xl font-semibold text-slate-50;
+  }
+
+  p {
+    @apply text-slate-400;
+  }
+}
+
+@layer components {
+  .card {
+    @apply bg-slate-900 border border-slate-800 rounded-lg p-4;
+  }
+
+  .card-title {
+    @apply text-lg font-semibold text-slate-50;
+  }
+
+  .btn-primary {
+    @apply bg-orange-600 hover:bg-orange-700 text-white font-medium py-2 px-4 rounded-lg transition-colors;
+  }
+
+  .btn-secondary {
+    @apply bg-slate-800 hover:bg-slate-700 text-slate-50 font-medium py-2 px-4 rounded-lg transition-colors;
+  }
+
+  .badge {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+  }
+
+  .badge-success {
+    @apply bg-green-900/30 text-green-400;
+  }
+
+  .badge-warning {
+    @apply bg-yellow-900/30 text-yellow-400;
+  }
+
+  .badge-danger {
+    @apply bg-red-900/30 text-red-400;
+  }
+
+  .badge-info {
+    @apply bg-blue-900/30 text-blue-400;
+  }
+}

@@ -6,6 +6,7 @@ import { operatorsRouter } from './routers/operators';
 import { kpisRouter } from './routers/kpis';
 import { reportsRouter } from './routers/reports';
 import { notificationsRouter } from './routers/notifications';
+import { detectionRouter } from './routers/detection';
 
 /**
  * App Router - Agrupa todos os routers da aplicação
@@ -18,6 +19,7 @@ import { notificationsRouter } from './routers/notifications';
  * - kpis: Métricas para dashboard
  * - reports: Geração de relatórios
  * - notifications: Preferências e histórico de notificações
+ * - detection: Execução sob demanda e status dos módulos de detecção
  */
 export const appRouter = router({
   health: healthRouter,
@@ -27,6 +29,7 @@ export const appRouter = router({
   kpis: kpisRouter,
   reports: reportsRouter,
   notifications: notificationsRouter,
+  detection: detectionRouter,
 });
 
 export type AppRouter = typeof appRouter;

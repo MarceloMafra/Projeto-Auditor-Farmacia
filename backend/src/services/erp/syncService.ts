@@ -19,6 +19,7 @@ import {
   DatabaseType,
 } from './types';
 import { createErpConnector } from './connectors';
+import { getAuditService } from '@/services/audit';
 
 export interface SyncOptions {
   batchSize?: number;
@@ -288,10 +289,19 @@ export class ErpSyncService {
    */
   private async recordSyncAudit(data: any): Promise<void> {
     try {
-      // TODO: Inserir em tb_erp_sync_audit
-      console.log('📝 Auditoria registrada com sucesso');
+      const auditService = getAuditService(this.db);
+
+      await auditService.recordErpSync({
+        syncId: this.syncId,
+        databaseType: this.config.type,
+        syncType: data.syncType,
+        result: data.result,
+        host: this.config.host,
+        database: this.config.database,
+      });
     } catch (error) {
-      console.error('⚠️  Erro ao registrar auditoria:', error);
+      const errorMsg = error instanceof Error ? error.message : 'Erro desconhecido';
+      console.error('⚠️  Erro ao registrar auditoria:', errorMsg);
     }
   }
 

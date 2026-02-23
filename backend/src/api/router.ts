@@ -1,6 +1,7 @@
 import { router } from './trpc';
 import { healthRouter } from './routers/health';
 import { auditRouter } from './routers/audit';
+import { auditTrailRouter } from './routers/auditTrail';
 import { alertsRouter } from './routers/alerts';
 import { operatorsRouter } from './routers/operators';
 import { kpisRouter } from './routers/kpis';
@@ -15,6 +16,7 @@ import { erpRouter } from './routers/erp';
  * Routers disponíveis:
  * - health: Status da aplicação e banco de dados
  * - audit: Detecção de fraudes e investigação
+ * - auditTrail: Histórico de sincronizações e detecções
  * - alerts: Gerenciamento de alertas
  * - operators: Perfil e histórico de operadores
  * - kpis: Métricas para dashboard
@@ -26,6 +28,7 @@ import { erpRouter } from './routers/erp';
 export const appRouter = router({
   health: healthRouter,
   audit: auditRouter,
+  auditTrail: auditTrailRouter,
   alerts: alertsRouter,
   operators: operatorsRouter,
   kpis: kpisRouter,

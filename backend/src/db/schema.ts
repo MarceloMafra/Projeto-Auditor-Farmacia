@@ -182,6 +182,143 @@ export const users = mysqlTable(
   })
 );
 
+// ==================== tb_erp_sync_audit ====================
+// Rastreia cada sincronização com ERP
+export const erpSyncAudit = mysqlTable(
+  'tb_erp_sync_audit',
+  {
+    id: varchar('id', { length: 50 }).primaryKey(),
+    syncId: varchar('syncId', { length: 50 }).notNull(),
+    databaseType: mysqlEnum('databaseType', ['mysql', 'postgresql', 'oracle', 'sqlserver']).notNull(),
+    syncType: mysqlEnum('syncType', ['FULL', 'INCREMENTAL']).notNull(),
+    startTime: datetime('startTime').notNull(),
+    endTime: datetime('endTime').notNull(),
+    durationMs: int('durationMs').notNull(),
+    recordsFetched: int('recordsFetched').default(0),
+    recordsProcessed: int('recordsProcessed').default(0),
+    recordsInserted: int('recordsInserted').default(0),
+    recordsUpdated: int('recordsUpdated').default(0),
+    recordsSkipped: int('recordsSkipped').default(0),
+    status: mysqlEnum('status', ['SUCCESS', 'PARTIAL', 'FAILED']).notNull(),
+    errorCount: int('errorCount').default(0),
+    errors: json('errors').$type<string[]>(),
+    triggeredBy: varchar('triggeredBy', { length: 50 }), // 'system' or user_id
+    isManual: int('isManual').default(0), // Boolean: 0 or 1
+    host: varchar('host', { length: 255 }),
+    database: varchar('database', { length: 255 }),
+    createdAt: datetime('createdAt').default(sql`CURRENT_TIMESTAMP`),
+  },
+  (table) => ({
+    syncIdIdx: index('idx_sync_id').on(table.syncId),
+    statusIdx: index('idx_status').on(table.status),
+    createdIdx: index('idx_created').on(table.createdAt),
+    databaseTypeIdx: index('idx_database_type').on(table.databaseType),
+    startTimeIdx: index('idx_start_time').on(table.startTime),
+  })
+);
+
+// ==================== tb_sync_dedup_keys ====================
+// Cache de chaves de deduplicação para evitar importações duplicadas
+export const syncDedupKeys = mysqlTable(
+  'tb_sync_dedup_keys',
+  {
+    id: int('id').autoincrement().primaryKey(),
+    syncId: varchar('syncId', { length: 50 }).notNull(),
+    dedupKey: varchar('dedupKey', { length: 255 }).notNull(),
+    pdv: varchar('pdv', { length: 10 }).notNull(),
+    operator: varchar('operator', { length: 20 }).notNull(),
+    amount: decimal('amount', { precision: 10, scale: 2 }).notNull(),
+    timestampBucket: datetime('timestampBucket').notNull(),
+    reference: varchar('reference', { length: 100 }),
+    createdAt: datetime('createdAt').default(sql`CURRENT_TIMESTAMP`),
+  },
+  (table) => ({
+    syncIdIdx: index('idx_sync_id').on(table.syncId),
+    dedupKeyIdx: index('idx_dedup_key').on(table.dedupKey),
+    pdvOperatorIdx: index('idx_pdv_operator').on(table.pdv, table.operator),
+    timestampIdx: index('idx_timestamp').on(table.timestampBucket),
+  })
+);
+
+// ==================== tb_sync_errors ====================
+// Detalhes de erros ocorridos durante sincronização
+export const syncErrors = mysqlTable(
+  'tb_sync_errors',
+  {
+    id: int('id').autoincrement().primaryKey(),
+    syncId: varchar('syncId', { length: 50 }).notNull(),
+    errorMessage: text('errorMessage').notNull(),
+    errorSeverity: mysqlEnum('errorSeverity', ['WARNING', 'ERROR', 'CRITICAL']).notNull(),
+    isRecoverable: int('isRecoverable').default(1), // Boolean: 0 or 1
+    recordData: json('recordData').$type<Record<string, any>>(),
+    stackTrace: text('stackTrace'),
+    attemptNumber: int('attemptNumber').default(1),
+    createdAt: datetime('createdAt').default(sql`CURRENT_TIMESTAMP`),
+  },
+  (table) => ({
+    syncIdIdx: index('idx_sync_id').on(table.syncId),
+    severityIdx: index('idx_severity').on(table.errorSeverity),
+    createdIdx: index('idx_created').on(table.createdAt),
+  })
+);
+
+// ==================== tb_detection_audit ====================
+// Rastreia execuções do Detection Engine
+export const detectionAudit = mysqlTable(
+  'tb_detection_audit',
+  {
+    id: varchar('id', { length: 50 }).primaryKey(),
+    detectionId: varchar('detectionId', { length: 50 }).notNull(),
+    startTime: datetime('startTime').notNull(),
+    endTime: datetime('endTime').notNull(),
+    durationMs: int('durationMs').notNull(),
+    recordsAnalyzed: int('recordsAnalyzed').default(0),
+    alertsGenerated: int('alertsGenerated').default(0),
+    ghostCancellations: int('ghostCancellations').default(0),
+    pbmDeviations: int('pbmDeviations').default(0),
+    noSaleEvents: int('noSaleEvents').default(0),
+    cpfAbuses: int('cpfAbuses').default(0),
+    cashDiscrepancies: int('cashDiscrepancies').default(0),
+    operatorsUpdated: int('operatorsUpdated').default(0),
+    status: mysqlEnum('status', ['SUCCESS', 'PARTIAL', 'FAILED']).notNull(),
+    errorCount: int('errorCount').default(0),
+    errors: json('errors').$type<string[]>(),
+    triggeredBy: varchar('triggeredBy', { length: 50 }), // 'system' or user_id
+    isManual: int('isManual').default(0), // Boolean: 0 or 1
+    syncId: varchar('syncId', { length: 50 }), // Link to sync if triggered after sync
+    createdAt: datetime('createdAt').default(sql`CURRENT_TIMESTAMP`),
+  },
+  (table) => ({
+    detectionIdIdx: index('idx_detection_id').on(table.detectionId),
+    statusIdx: index('idx_status').on(table.status),
+    createdIdx: index('idx_created').on(table.createdAt),
+    syncIdIdx: index('idx_sync_id').on(table.syncId),
+    startTimeIdx: index('idx_start_time').on(table.startTime),
+  })
+);
+
+// ==================== tb_detection_errors ====================
+// Detalhes de erros ocorridos durante detecção
+export const detectionErrors = mysqlTable(
+  'tb_detection_errors',
+  {
+    id: int('id').autoincrement().primaryKey(),
+    detectionId: varchar('detectionId', { length: 50 }).notNull(),
+    moduleType: mysqlEnum('moduleType', ['GHOST_CANCELLATION', 'PBM_DEVIATION', 'NO_SALE', 'CPF_ABUSE', 'CASH_DISCREPANCY', 'RISK_SCORE']).notNull(),
+    errorMessage: text('errorMessage').notNull(),
+    errorSeverity: mysqlEnum('errorSeverity', ['WARNING', 'ERROR', 'CRITICAL']).notNull(),
+    isRecoverable: int('isRecoverable').default(1), // Boolean: 0 or 1
+    stackTrace: text('stackTrace'),
+    createdAt: datetime('createdAt').default(sql`CURRENT_TIMESTAMP`),
+  },
+  (table) => ({
+    detectionIdIdx: index('idx_detection_id').on(table.detectionId),
+    moduleTypeIdx: index('idx_module_type').on(table.moduleType),
+    severityIdx: index('idx_severity').on(table.errorSeverity),
+    createdIdx: index('idx_created').on(table.createdAt),
+  })
+);
+
 // Export all tables
 export const schema = {
   employees,
@@ -193,4 +330,9 @@ export const schema = {
   auditAlerts,
   cashDiscrepancies,
   users,
+  erpSyncAudit,
+  syncDedupKeys,
+  syncErrors,
+  detectionAudit,
+  detectionErrors,
 };

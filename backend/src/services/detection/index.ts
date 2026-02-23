@@ -13,6 +13,8 @@ import { detectCpfAbuse } from './cpfAbuse';
 import { detectCashDiscrepancy } from './cashDiscrepancy';
 import { calculateRiskScores } from './riskScoreCalculation';
 import { DetectionResult } from './types';
+import { getAuditService } from '@/services/audit';
+import { v4 as uuidv4 } from 'uuid';
 
 export interface DetectionEngineResult {
   success: boolean;
@@ -149,7 +151,7 @@ export async function runDetectionEngine(db: Database, dateFrom?: Date): Promise
     console.log(`   Tempo total:           ${(totalDuration / 1000).toFixed(2)}s`);
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 
-    return {
+    const detectionResult = {
       success: true,
       totalDuration,
       timestamp: new Date(),
@@ -158,11 +160,28 @@ export async function runDetectionEngine(db: Database, dateFrom?: Date): Promise
       summary,
       errors: errors.length > 0 ? errors : undefined,
     };
+
+    // Registrar em auditoria
+    try {
+      const auditService = getAuditService(db);
+      const detectionId = `DET-${new Date().toISOString().split('T')[0]}-${uuidv4().slice(0, 8).toUpperCase()}`;
+
+      await auditService.recordDetectionRun({
+        detectionId,
+        result: detectionResult,
+        triggeredBy: 'system',
+        isManual: false,
+      });
+    } catch (auditError) {
+      console.error('⚠️  Erro ao registrar detecção em auditoria:', auditError);
+    }
+
+    return detectionResult;
   } catch (error) {
     const errorMsg = error instanceof Error ? error.message : 'Unknown error';
     console.error('❌ Detection Engine error:', errorMsg);
 
-    return {
+    const detectionResult = {
       success: false,
       totalDuration: Date.now() - startTime,
       timestamp: new Date(),
@@ -178,6 +197,23 @@ export async function runDetectionEngine(db: Database, dateFrom?: Date): Promise
       },
       errors: [...errors, errorMsg],
     };
+
+    // Registrar erro em auditoria
+    try {
+      const auditService = getAuditService(db);
+      const detectionId = `DET-${new Date().toISOString().split('T')[0]}-${uuidv4().slice(0, 8).toUpperCase()}`;
+
+      await auditService.recordDetectionRun({
+        detectionId,
+        result: detectionResult,
+        triggeredBy: 'system',
+        isManual: false,
+      });
+    } catch (auditError) {
+      console.error('⚠️  Erro ao registrar detecção em auditoria:', auditError);
+    }
+
+    return detectionResult;
   }
 }
 

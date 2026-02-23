@@ -7,6 +7,7 @@ import { kpisRouter } from './routers/kpis';
 import { reportsRouter } from './routers/reports';
 import { notificationsRouter } from './routers/notifications';
 import { detectionRouter } from './routers/detection';
+import { erpRouter } from './routers/erp';
 
 /**
  * App Router - Agrupa todos os routers da aplicação
@@ -20,6 +21,7 @@ import { detectionRouter } from './routers/detection';
  * - reports: Geração de relatórios
  * - notifications: Preferências e histórico de notificações
  * - detection: Execução sob demanda e status dos módulos de detecção
+ * - erp: Integração e sincronização com sistemas ERP
  */
 export const appRouter = router({
   health: healthRouter,
@@ -30,6 +32,7 @@ export const appRouter = router({
   reports: reportsRouter,
   notifications: notificationsRouter,
   detection: detectionRouter,
+  erp: erpRouter,
 });
 
 export type AppRouter = typeof appRouter;

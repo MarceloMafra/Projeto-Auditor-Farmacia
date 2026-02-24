@@ -217,13 +217,11 @@ export class AuditService {
    */
   async getLastSyncs(limit: number = 10): Promise<any[]> {
     try {
-      // TODO: Usar queries do Drizzle
-      // const syncs = await this.db.query.erpSyncAudit.findMany({
-      //   orderBy: desc(erpSyncAudit.createdAt),
-      //   limit,
-      // });
-      // return syncs;
-      return [];
+      const syncs = await this.db.query.erpSyncAudit.findMany({
+        limit,
+        orderBy: (table) => [table.createdAt],
+      });
+      return syncs.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
     } catch (error) {
       console.error('Erro ao buscar últimas sincronizações:', error);
       return [];
@@ -243,15 +241,31 @@ export class AuditService {
     averageDuration: number;
   }> {
     try {
-      // TODO: Implementar queries para estatísticas
+      const cutoffDate = new Date(Date.now() - daysBack * 24 * 60 * 60 * 1000);
+
+      const allSyncs = await this.db.query.erpSyncAudit.findMany({
+        where: (table) => {
+          const { gte } = require('drizzle-orm');
+          return gte(table.createdAt, cutoffDate);
+        },
+      });
+
+      const successful = allSyncs.filter((s) => s.status === 'SUCCESS').length;
+      const failed = allSyncs.filter((s) => s.status === 'FAILED').length;
+      const partial = allSyncs.filter((s) => s.status === 'PARTIAL').length;
+
+      const totalInserted = allSyncs.reduce((sum, s) => sum + (s.recordsInserted || 0), 0);
+      const totalSkipped = allSyncs.reduce((sum, s) => sum + (s.recordsSkipped || 0), 0);
+      const avgDuration = allSyncs.length > 0 ? allSyncs.reduce((sum, s) => sum + (s.durationMs || 0), 0) / allSyncs.length : 0;
+
       return {
-        totalSyncs: 0,
-        successfulSyncs: 0,
-        failedSyncs: 0,
-        partialSyncs: 0,
-        totalRecordsInserted: 0,
-        totalRecordsSkipped: 0,
-        averageDuration: 0,
+        totalSyncs: allSyncs.length,
+        successfulSyncs: successful,
+        failedSyncs: failed,
+        partialSyncs: partial,
+        totalRecordsInserted: totalInserted,
+        totalRecordsSkipped: totalSkipped,
+        averageDuration: Math.round(avgDuration),
       };
     } catch (error) {
       console.error('Erro ao buscar estatísticas:', error);
@@ -272,8 +286,11 @@ export class AuditService {
    */
   async getLastDetections(limit: number = 10): Promise<any[]> {
     try {
-      // TODO: Usar queries do Drizzle
-      return [];
+      const detections = await this.db.query.detectionAudit.findMany({
+        limit,
+        orderBy: (table) => [table.createdAt],
+      });
+      return detections.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
     } catch (error) {
       console.error('Erro ao buscar últimas detecções:', error);
       return [];
@@ -291,13 +308,27 @@ export class AuditService {
     averageDuration: number;
   }> {
     try {
-      // TODO: Implementar queries para estatísticas
+      const cutoffDate = new Date(Date.now() - daysBack * 24 * 60 * 60 * 1000);
+
+      const allDetections = await this.db.query.detectionAudit.findMany({
+        where: (table) => {
+          const { gte } = require('drizzle-orm');
+          return gte(table.createdAt, cutoffDate);
+        },
+      });
+
+      const successful = allDetections.filter((d) => d.status === 'SUCCESS').length;
+      const failed = allDetections.filter((d) => d.status === 'FAILED').length;
+
+      const totalAlerts = allDetections.reduce((sum, d) => sum + (d.alertsGenerated || 0), 0);
+      const avgDuration = allDetections.length > 0 ? allDetections.reduce((sum, d) => sum + (d.durationMs || 0), 0) / allDetections.length : 0;
+
       return {
-        totalDetections: 0,
-        successfulDetections: 0,
-        failedDetections: 0,
-        totalAlertsGenerated: 0,
-        averageDuration: 0,
+        totalDetections: allDetections.length,
+        successfulDetections: successful,
+        failedDetections: failed,
+        totalAlertsGenerated: totalAlerts,
+        averageDuration: Math.round(avgDuration),
       };
     } catch (error) {
       console.error('Erro ao buscar estatísticas de detecção:', error);
@@ -317,14 +348,14 @@ export class AuditService {
   async cleanOldDedupKeys(daysToKeep: number = 30): Promise<number> {
     try {
       const cutoffDate = new Date(Date.now() - daysToKeep * 24 * 60 * 60 * 1000);
+      const { lt } = require('drizzle-orm');
 
-      // TODO: Implementar delete com Drizzle
-      // const result = await this.db.delete(syncDedupKeys).where(
-      //   lt(syncDedupKeys.createdAt, cutoffDate)
-      // );
+      const result = await this.db.delete(syncDedupKeys).where(
+        lt(syncDedupKeys.createdAt, cutoffDate)
+      );
 
       console.log(`🧹 Chaves de deduplicação antigas removidas`);
-      return 0;
+      return result.rowsAffected || 0;
     } catch (error) {
       console.error('Erro ao limpar chaves antigas:', error);
       return 0;
@@ -341,12 +372,42 @@ export class AuditService {
   }> {
     try {
       console.log(`📊 Gerando relatório de auditoria...`);
+      const { gte, lte } = require('drizzle-orm');
 
-      // TODO: Implementar queries para gerar relatório
+      // Buscar sincronizações no período
+      const syncs = await this.db.query.erpSyncAudit.findMany({
+        where: (table) => ({
+          createdAt: gte(table.createdAt, startDate),
+        }),
+      });
+
+      // Buscar detecções no período
+      const detections = await this.db.query.detectionAudit.findMany({
+        where: (table) => ({
+          createdAt: gte(table.createdAt, startDate),
+        }),
+      });
+
+      // Buscar erros no período
+      const syncErrors = await this.db.query.syncErrors.findMany({
+        where: (table) => ({
+          createdAt: gte(table.createdAt, startDate),
+        }),
+      });
+
+      const detectionErrors = await this.db.query.detectionErrors.findMany({
+        where: (table) => ({
+          createdAt: gte(table.createdAt, startDate),
+        }),
+      });
+
       return {
-        syncs: [],
-        detections: [],
-        errors: [],
+        syncs: syncs.filter((s) => new Date(s.createdAt) <= endDate),
+        detections: detections.filter((d) => new Date(d.createdAt) <= endDate),
+        errors: [
+          ...syncErrors.filter((e) => new Date(e.createdAt) <= endDate),
+          ...detectionErrors.filter((e) => new Date(e.createdAt) <= endDate),
+        ],
       };
     } catch (error) {
       console.error('Erro ao gerar relatório:', error);

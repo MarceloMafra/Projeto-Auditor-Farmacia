@@ -1,4 +1,4 @@
-import { mysqlTable, varchar, text, datetime, decimal, int, enum as mysqlEnum, json, index, primaryKey } from 'drizzle-orm/mysql-core';
+import { mysqlTable, varchar, text, datetime, decimal, int, mysqlEnum, json, index, primaryKey } from 'drizzle-orm/mysql-core';
 import { sql } from 'drizzle-orm';
 
 // ==================== tb_employees ====================
@@ -10,7 +10,7 @@ export const employees = mysqlTable(
     hireDate: datetime('hireDate'),
     status: mysqlEnum('status', ['ACTIVE', 'INACTIVE']).default('ACTIVE'),
     createdAt: datetime('createdAt').default(sql`CURRENT_TIMESTAMP`),
-    updatedAt: datetime('updatedAt').default(sql`CURRENT_TIMESTAMP`).onUpdateNow(),
+    updatedAt: datetime('updatedAt').default(sql`CURRENT_TIMESTAMP`),
   },
   (table) => ({
     statusIdx: index('idx_status').on(table.status),
@@ -175,7 +175,7 @@ export const users = mysqlTable(
     name: text('name').notNull(),
     role: mysqlEnum('role', ['Admin', 'Analyst']).default('Analyst'),
     createdAt: datetime('createdAt').default(sql`CURRENT_TIMESTAMP`),
-    updatedAt: datetime('updatedAt').default(sql`CURRENT_TIMESTAMP`).onUpdateNow(),
+    updatedAt: datetime('updatedAt').default(sql`CURRENT_TIMESTAMP`),
   },
   (table) => ({
     emailIdx: index('idx_email').on(table.email),

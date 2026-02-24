@@ -217,6 +217,4 @@ export async function runDetectionEngine(db: Database, dateFrom?: Date): Promise
   }
 }
 
-// Exportar tipos e funções individuais
-export { DetectionResult } from './types';
-export { RISK_SCORES, RISK_LEVELS, getRiskLevel, getSeverityFromScore } from './types';
+// Tipos e constants já são importados acima e usados internally

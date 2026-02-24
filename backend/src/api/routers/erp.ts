@@ -10,7 +10,7 @@
  */
 
 import { router, adminProcedure } from '@/api/trpc';
-import { ErpSyncService, getSupportedDatabaseTypes } from '@/services/erp';
+import { ErpSyncService } from '@/services/erp';
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 

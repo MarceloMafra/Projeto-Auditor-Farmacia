@@ -1,68 +1,59 @@
-import dotenv from 'dotenv';
+/**
+ * Environment Configuration
+ * Carrega variáveis de ambiente e valida
+ */
 
-dotenv.config();
+const getEnv = (key: string, defaultValue?: string): string => {
+  const value = process.env[key];
+  if (!value && !defaultValue) {
+    console.warn(`⚠️  Environment variable ${key} not found, using default`);
+  }
+  return value || defaultValue || '';
+};
 
 export const env = {
   // Server
-  NODE_ENV: process.env.NODE_ENV || 'development',
-  PORT: parseInt(process.env.PORT || '3000', 10),
-  FRONTEND_URL: process.env.FRONTEND_URL || 'http://localhost:5173',
+  NODE_ENV: getEnv('NODE_ENV', 'development'),
+  PORT: parseInt(getEnv('PORT', '3000'), 10),
+  FRONTEND_URL: getEnv('FRONTEND_URL', 'http://localhost:5173'),
 
   // Database
-  DB: {
-    HOST: process.env.DB_HOST || 'localhost',
-    PORT: parseInt(process.env.DB_PORT || '3306', 10),
-    NAME: process.env.DB_NAME || 'auditor_db',
-    USER: process.env.DB_USER || 'auditor_user',
-    PASSWORD: process.env.DB_PASSWORD || 'auditor_password',
-  },
+  DB_HOST: getEnv('DB_HOST', 'localhost'),
+  DB_PORT: parseInt(getEnv('DB_PORT', '3306'), 10),
+  DB_USER: getEnv('DB_USER', 'root'),
+  DB_PASSWORD: getEnv('DB_PASSWORD', ''),
+  DB_NAME: getEnv('DB_NAME', 'auditor_digital'),
+  DB_TYPE: getEnv('DB_TYPE', 'mysql'),
+  MOCK_DATABASE: getEnv('MOCK_DATABASE', 'false').toLowerCase() === 'true',
 
-  // OAuth
-  OAUTH: {
-    CLIENT_ID: process.env.OAUTH_CLIENT_ID || '',
-    CLIENT_SECRET: process.env.OAUTH_CLIENT_SECRET || '',
-    REDIRECT_URI: process.env.OAUTH_REDIRECT_URI || 'http://localhost:3000/auth/callback',
-  },
+  // ERP Connection
+  ERP_HOST: getEnv('ERP_HOST', ''),
+  ERP_PORT: parseInt(getEnv('ERP_PORT', '3306'), 10),
+  ERP_USER: getEnv('ERP_USER', ''),
+  ERP_PASSWORD: getEnv('ERP_PASSWORD', ''),
+  ERP_DATABASE: getEnv('ERP_DATABASE', ''),
 
   // AWS S3
-  AWS: {
-    REGION: process.env.AWS_REGION || 'us-east-1',
-    ACCESS_KEY_ID: process.env.AWS_ACCESS_KEY_ID || '',
-    SECRET_ACCESS_KEY: process.env.AWS_SECRET_ACCESS_KEY || '',
-    S3_BUCKET: process.env.AWS_S3_BUCKET || 'auditor-evidence-bucket',
-  },
+  AWS_REGION: getEnv('AWS_REGION', 'us-east-1'),
+  AWS_ACCESS_KEY_ID: getEnv('AWS_ACCESS_KEY_ID', ''),
+  AWS_SECRET_ACCESS_KEY: getEnv('AWS_SECRET_ACCESS_KEY', ''),
+  AWS_S3_BUCKET: getEnv('AWS_S3_BUCKET', ''),
 
   // Email
-  EMAIL: {
-    SMTP_HOST: process.env.SMTP_HOST || 'smtp.gmail.com',
-    SMTP_PORT: parseInt(process.env.SMTP_PORT || '587', 10),
-    SMTP_USER: process.env.SMTP_USER || '',
-    SMTP_PASSWORD: process.env.SMTP_PASSWORD || '',
-    FROM: process.env.SMTP_FROM || 'auditor@empresa.com',
-  },
+  SMTP_HOST: getEnv('SMTP_HOST', ''),
+  SMTP_PORT: parseInt(getEnv('SMTP_PORT', '587'), 10),
+  SMTP_USER: getEnv('SMTP_USER', ''),
+  SMTP_PASSWORD: getEnv('SMTP_PASSWORD', ''),
+  SMTP_FROM: getEnv('SMTP_FROM', 'noreply@auditor-digital.com'),
 
-  // SMS (Twilio)
-  SMS: {
-    ACCOUNT_SID: process.env.TWILIO_ACCOUNT_SID || '',
-    AUTH_TOKEN: process.env.TWILIO_AUTH_TOKEN || '',
-    PHONE_NUMBER: process.env.TWILIO_PHONE_NUMBER || '',
-  },
+  // Twilio
+  TWILIO_ACCOUNT_SID: getEnv('TWILIO_ACCOUNT_SID', ''),
+  TWILIO_AUTH_TOKEN: getEnv('TWILIO_AUTH_TOKEN', ''),
+  TWILIO_PHONE: getEnv('TWILIO_PHONE', ''),
 
-  // ERP Integration
-  ERP: {
-    TYPE: process.env.ERP_TYPE || 'mysql',
-    HOST: process.env.ERP_HOST || 'localhost',
-    PORT: parseInt(process.env.ERP_PORT || '3306', 10),
-    DATABASE: process.env.ERP_DATABASE || 'erp_db',
-    USER: process.env.ERP_USER || 'erp_user',
-    PASSWORD: process.env.ERP_PASSWORD || 'erp_password',
-  },
+  // Auth
+  JWT_SECRET: getEnv('JWT_SECRET', 'dev-secret-key'),
+  SESSION_SECRET: getEnv('SESSION_SECRET', 'dev-session-key'),
+};
 
-  // Logging
-  LOG_LEVEL: process.env.LOG_LEVEL || 'debug',
-} as const;
-
-// Validate critical env vars
-if (!env.DB.HOST) {
-  throw new Error('DB_HOST is required');
-}
+export default env;

@@ -1,6 +1,7 @@
 import { initTRPC, TRPCError } from '@trpc/server';
 import { CreateExpressContextOptions } from '@trpc/server/adapters/express';
 import { type Database } from '@/db';
+import { env } from '@/config/env';
 
 /**
  * Context type para tRPC
@@ -22,9 +23,16 @@ export interface Context {
 export async function createContext(opts?: CreateExpressContextOptions): Promise<Context> {
   const { db } = await import('@/db');
 
+  // Em modo MOCK, criar usuário fake para testes
+  const mockUser = env.MOCK_DATABASE ? {
+    id: 1,
+    email: 'demo@auditor.com',
+    role: 'Analyst' as const,
+  } : undefined;
+
   return {
     db,
-    user: (opts?.req as any)?.user, // Será preenchido por middleware de autenticação
+    user: (opts?.req as any)?.user || mockUser, // Será preenchido por middleware de autenticação ou mock
   };
 }
 
@@ -71,7 +79,14 @@ export const isAuthenticated = t.middleware(({ ctx, next }) => {
 /**
  * Middleware para validar papel de admin
  */
-export const isAdmin = isAuthenticated.pipe(({ ctx, next }) => {
+const isAdminMiddleware = t.middleware(({ ctx, next }) => {
+  if (!ctx.user) {
+    throw new TRPCError({
+      code: 'UNAUTHORIZED',
+      message: 'Você não está autenticado',
+    });
+  }
+
   if (ctx.user?.role !== 'Admin') {
     throw new TRPCError({
       code: 'FORBIDDEN',
@@ -95,4 +110,4 @@ export const protectedProcedure = publicProcedure.use(isAuthenticated);
 /**
  * Admin procedure (requer admin role)
  */
-export const adminProcedure = publicProcedure.use(isAdmin);
+export const adminProcedure = publicProcedure.use(isAdminMiddleware);

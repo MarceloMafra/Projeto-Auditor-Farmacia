@@ -1,9 +1,8 @@
 import { createTRPCClient, httpBatchLink } from '@trpc/client';
-import type { AppRouter } from '../../../backend/src/api/router';
 
-const apiUrl = import.meta.env.VITE_TRPC_URL || `${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/trpc`;
+const apiUrl = (import.meta as any).env?.VITE_TRPC_URL || `${(import.meta as any).env?.VITE_API_URL || 'http://localhost:3000'}/trpc`;
 
-export const trpc = createTRPCClient<AppRouter>({
+export const trpc = createTRPCClient<any>({
   links: [
     httpBatchLink({
       url: apiUrl,

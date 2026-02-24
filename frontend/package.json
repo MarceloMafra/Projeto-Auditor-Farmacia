@@ -41,7 +41,8 @@
     "tailwind-merge": "^2.2.0",
     "date-fns": "^2.30.0",
     "zustand": "^4.4.1",
-    "axios": "^1.6.2"
+    "axios": "^1.6.2",
+    "lucide-react": "^0.356.0"
   },
   "devDependencies": {
     "@types/react": "^18.2.37",
